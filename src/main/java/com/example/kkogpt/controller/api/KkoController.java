@@ -1,5 +1,7 @@
 package com.example.kkogpt.controller.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +18,10 @@ import java.util.Map;
 public class KkoController {
 
     @PostMapping("/skill")
-    public ResponseEntity<Map<String, Object>> skill(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<String> skill(@RequestBody Map<String, Object> payload) throws JsonProcessingException {
         log.info("[kakao] payload : " + payload);
+
+        ObjectMapper objectMapper = new ObjectMapper();
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("version", "2.0");
@@ -27,10 +31,13 @@ public class KkoController {
         Map<String, Object> template = Map.of("outputs", List.of(output));
 
         response.put("template", template);
+
+        String json = objectMapper.writeValueAsString(response);
+
         log.info("[success] skill");
         return ResponseEntity
                 .ok()
                 .header(HttpHeaders.CONTENT_TYPE, "application/json; charset=UTF-8")
-                .body(response);
+                .body(json);
     }
 }
