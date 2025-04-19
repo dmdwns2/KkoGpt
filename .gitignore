@@ -4,6 +4,7 @@ out/
 .idea
 build
 .env
+deploy.sh
 !**/src/main/**/out/
 !**/src/test/**/out/
 
