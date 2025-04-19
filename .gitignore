@@ -3,6 +3,7 @@ out/
 .gradle
 .idea
 build
+.env
 !**/src/main/**/out/
 !**/src/test/**/out/
 
