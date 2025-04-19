@@ -17,8 +17,8 @@ import java.util.Map;
 @RestController
 public class KkoController {
 
-    @PostMapping("/skill")
-    public ResponseEntity<String> skill(@RequestBody Map<String, Object> payload) throws JsonProcessingException {
+    @PostMapping("/skill-test")
+    public ResponseEntity<String> skillTest(@RequestBody Map<String, Object> payload) throws JsonProcessingException {
         log.info("[kakao] payload : " + payload);
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -34,7 +34,7 @@ public class KkoController {
 
         String json = objectMapper.writeValueAsString(response);
 
-        log.info("[success] skill");
+        log.info("[success] skillTest");
         return ResponseEntity
                 .ok()
                 .header(HttpHeaders.CONTENT_TYPE, "application/json; charset=UTF-8")
