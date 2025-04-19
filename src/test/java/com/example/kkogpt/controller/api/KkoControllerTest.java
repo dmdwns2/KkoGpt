@@ -30,7 +30,7 @@ class KkoControllerTest {
                 """;
 
         // when, then
-        mockMvc.perform(post("/skill")
+        mockMvc.perform(post("/skill-test")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
