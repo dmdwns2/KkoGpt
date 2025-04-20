@@ -59,4 +59,31 @@ class GptServiceTest {
         // then
         assertThat(result).isEqualTo("OK");
     }
+
+    @Test
+    void requestGptResponseTimeOut() {
+        // given
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode mockJson = objectMapper.createObjectNode();
+
+        ObjectNode messageNode = objectMapper.createObjectNode();
+        messageNode.put("content", "OK");
+
+        ObjectNode choiceNode = objectMapper.createObjectNode();
+        choiceNode.set("message", messageNode);
+
+        mockJson.putArray("choices").add(choiceNode);
+
+        when(webClient.post()).thenReturn(uriSpec);
+        when(uriSpec.uri("/chat/completions")).thenReturn(bodySpec);
+        when(bodySpec.bodyValue(any())).thenReturn(headersSpec);
+        when(headersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockJson));
+
+        // when
+        String result = gptService.request("Hello");
+
+        // then
+        assertThat(result).isEqualTo("OK");
+    }
 }

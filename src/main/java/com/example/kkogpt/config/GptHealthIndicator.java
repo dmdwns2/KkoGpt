@@ -14,8 +14,8 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class GptHealthIndicator implements HealthIndicator {
 
-    private final WebClient webClient;
     private static final String GPT_END_POINT = "/chat/completions";
+    private final WebClient webClient;
 
     @Override
     public Health health() {

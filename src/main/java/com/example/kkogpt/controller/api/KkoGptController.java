@@ -1,6 +1,9 @@
 package com.example.kkogpt.controller.api;
 
-import com.example.kkogpt.service.GptService;
+import com.example.kkogpt.domain.BotTraits;
+import com.example.kkogpt.domain.ChatMessage;
+import com.example.kkogpt.domain.ConversationMemory;
+import com.example.kkogpt.service.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -23,17 +26,48 @@ import java.util.Map;
 public class KkoGptController {
 
     private final GptService gptService;
+    private final BotTraitsService botTraitsService;
+    private final ConversationMemoryService memoryService;
+    private final MessageBuilder messageBuilder;
+    private final SkillCommandService skillCommandService;
 
     @PostMapping
     public ResponseEntity<String> handleSkill(@RequestBody Map<String, Object> payload) throws JsonProcessingException {
         log.info("[kkoGpt] payload: {}", payload);
 
+        String userId = extractUserId(payload);
         String utterance = extractUtterance(payload);
-        log.info("[kkoGpt] utterance: {}", utterance);
+        log.info("[kkoGpt] userId: {}, utterance: {}", userId, utterance);
 
-        String gptResponse = gptService.request(utterance);
+        // 명령어 처리
+        String commandResponse = skillCommandService.handle(userId, utterance);
+        if (commandResponse != null) {
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json; charset=UTF-8")
+                    .body(convertKkoResToJson(commandResponse));
+        }
+
+        // 사용자 성격/말투 조회
+        BotTraits traits = botTraitsService.getOrDefault(userId);
+
+        // 기억이 켜져 있다면 대화 히스토리 조회
+        List<ConversationMemory> history = traits.isMemoryEnabled()
+                ? memoryService.getRecent(userId, 10)
+                : List.of();
+
+        // GPT 메시지 구성
+        List<ChatMessage> messages = messageBuilder.build(traits, history, utterance);
+
+        // GPT 응답 생성
+        String gptResponse = gptService.chat(messages);
         log.info("[kkoGpt] response: {}", gptResponse);
 
+        // 기억이 켜져 있으면 저장
+        if (traits.isMemoryEnabled()) {
+            memoryService.save(userId, utterance, gptResponse);
+        }
+
+        // 카카오 응답 형태로 변환
         String kkoResponse = convertKkoResToJson(gptResponse);
 
         return ResponseEntity
@@ -46,6 +80,14 @@ public class KkoGptController {
         @SuppressWarnings("unchecked")
         Map<String, Object> userRequest = (Map<String, Object>) payload.get("userRequest");
         return userRequest.get("utterance").toString();
+    }
+
+    private String extractUserId(Map<String, Object> payload) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> userRequest = (Map<String, Object>) payload.get("userRequest");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> user = (Map<String, Object>) userRequest.get("user");
+        return user.get("id").toString();
     }
 
     private String convertKkoResToJson(String gptText) throws JsonProcessingException {
